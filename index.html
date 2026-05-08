@@ -140,7 +140,7 @@
 
 <script>
     // Configuration
-    const ADMIN_PASSWORD = "admin123";
+    const ADMIN_PASSWORD = "Account@Abbas.Nexauratechs.com";
     let isAdmin = false;
     
     let state = {
@@ -154,7 +154,6 @@
         const saved = localStorage.getItem('nexaura_finance_data');
         if (saved) state = JSON.parse(saved);
         
-        // Set default dates to today
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('p-date').value = today;
         document.getElementById('e-date').value = today;
@@ -233,16 +232,12 @@
     }
 
     function render() {
-        // 1. Calculate Totals
         const totalRevenue = state.projects.reduce((s, p) => s + p.amount, 0);
         const totalExpenses = state.expenses.reduce((s, e) => s + e.amount, 0);
-        
         const rawCompanyShare = totalRevenue * 0.40;
-        const netCompanyAccount = rawCompanyShare - totalExpenses; // Deducting expenses from company 40%
-        
+        const netCompanyAccount = rawCompanyShare - totalExpenses;
         const charityFund = totalRevenue * 0.10;
 
-        // 2. Render Metrics
         document.getElementById('metrics-container').innerHTML = `
             <div class="metric"><div class="metric-label">Total Revenue</div><div class="metric-value color-revenue">${fmt(totalRevenue)}</div></div>
             <div class="metric"><div class="metric-label">Company Account (Net)</div><div class="metric-value color-company">${fmt(netCompanyAccount)}</div></div>
@@ -250,7 +245,6 @@
             <div class="metric"><div class="metric-label">Total Expenditures</div><div class="metric-value color-expense">${fmt(totalExpenses)}</div></div>
         `;
 
-        // 3. Render Partner Earnings
         const partnerData = state.partners.map((name, i) => {
             const baseShare = (totalRevenue * 0.40) / 4;
             const referralBonus = state.projects.filter(p => p.refIdx === i).reduce((s, p) => s + (p.amount * 0.10), 0);
@@ -264,7 +258,6 @@
             </div>
         `).join('');
 
-        // 4. Render Ledger (Combined Projects & Expenses)
         const allItems = [
             ...state.projects.map(p => ({...p, displayType: 'Revenue'})),
             ...state.expenses.map(e => ({...e, displayType: 'Expense', amount: -e.amount}))
@@ -282,7 +275,6 @@
             </tr>
         `).join('');
 
-        // 5. Update Selectors & Settings
         document.getElementById('p-ref').innerHTML = state.partners.map((n, i) => `<option value="${i}">${n}</option>`).join('') + `<option value="-1">None (External)</option>`;
         document.getElementById('partner-inputs').innerHTML = state.partners.map((n, i) => `
             <label>Partner ${i+1}</label>
