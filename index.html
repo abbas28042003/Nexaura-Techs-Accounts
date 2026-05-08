@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexaura Technologies - Finance</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:#f4f7f6;color:#333}
+        .app{padding:2rem;max-width:900px;margin: auto;}
+        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem}
+        .logo-section{display:flex;align-items:center;gap:12px}
+        .logo{width:45px;height:45px;border-radius:8px;background:#1D9E75;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:18px}
+        
+        .tabs{display:flex;gap:4px;margin-bottom:1.5rem;border-bottom:1px solid #ddd;padding-bottom:0}
+        .tab{padding:10px 20px;font-size:14px;cursor:pointer;border:none;background:none;color:#666;border-bottom:2px solid transparent;transition: 0.3s}
+        .tab.active{color:#1D9E75;border-bottom:2px solid #1D9E75;font-weight:600}
+        
+        .card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;padding:1.5rem;margin-bottom:1rem;box-shadow: 0 2px 4px rgba(0,0,0,0.05)}
+        .metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:15px;margin-bottom:1.5rem}
+        .metric{background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:1.25rem;text-align:center}
+        .metric-label{font-size:12px;color:#777;margin-bottom:8px;text-transform: uppercase;letter-spacing: 0.5px}
+        .metric-value{font-size:20px;font-weight:700}
+        
+        .color-revenue{color:#1D9E75}
+        .color-company{color:#0F6E56}
+        .color-charity{color:#BA7517}
+        .color-expense{color:#993C1D}
+
+        label{font-size:13px;color:#555;display:block;margin-bottom:6px;margin-top:12px;font-weight: 500}
+        input,select,textarea{width:100%;padding:10px;font-size:14px;border:1px solid #ccc;border-radius:6px;margin-bottom:5px}
+        
+        .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;font-size:14px;cursor:pointer;border:1px solid #ccc;border-radius:6px;background:#fff;transition:0.2s}
+        .btn.primary{background:#1D9E75;color:#fff;border-color:#1D9E75;font-weight:500}
+        .btn.primary:hover{background:#15805d}
+        .btn.admin-toggle{background: #eee; border:none; font-size: 12px; color: #666}
+
+        .tx-table{width:100%;border-collapse:collapse;font-size:13px}
+        .tx-table th{text-align:left;padding:12px;color:#777;border-bottom:2px solid #eee}
+        .tx-table td{padding:12px;border-bottom:1px solid #eee}
+        
+        .badge{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600}
+        .badge.expense{background:#FDECEA;color:#993C1D}
+        .badge.project{background:#E1F5EE;color:#0F6E56}
+
+        .admin-only { display: none; }
+        body.admin-mode .admin-only { display: block; }
+        body.admin-mode .admin-btn { display: inline-flex; }
+        body:not(.admin-mode) .admin-btn { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="app">
+    <div class="header">
+        <div class="logo-section">
+            <div class="logo">NT</div>
+            <div>
+                <div style="font-size:18px;font-weight:700">Nexaura Technologies</div>
+                <div id="role-indicator" style="font-size:12px;color:#1D9E75">View-Only Mode</div>
+            </div>
+        </div>
+        <button class="btn admin-toggle" onclick="toggleAdmin()">
+            <span id="lock-icon">🔒</span> Admin Login
+        </button>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('dashboard')">Dashboard</button>
+        <button class="tab admin-only" onclick="switchTab('add-project')">+ Project</button>
+        <button class="tab admin-only" onclick="switchTab('add-expense')">+ Expenditure</button>
+        <button class="tab" onclick="switchTab('transactions')">Ledger</button>
+        <button class="tab admin-only" onclick="switchTab('settings')">Settings</button>
+    </div>
+
+    <div id="tab-dashboard">
+        <div class="metric-grid" id="metrics-container"></div>
+        <div class="card">
+            <h3 style="margin-bottom:15px; font-size:16px">Partner Net Earnings (Including Referrals)</h3>
+            <div id="partner-list"></div>
+        </div>
+    </div>
+
+    <div id="tab-add-project" style="display:none">
+        <div class="card">
+            <h3>Record New Project Revenue</h3>
+            <label>Project Name</label>
+            <input type="text" id="p-name" placeholder="Client Name / Project Title">
+            <label>Amount (PKR)</label>
+            <input type="number" id="p-amount" placeholder="0.00">
+            <label>Referral Partner</label>
+            <select id="p-ref"></select>
+            <label>Date</label>
+            <input type="date" id="p-date">
+            <button class="btn primary" onclick="addProject()" style="margin-top:15px">Save Project</button>
+        </div>
+    </div>
+
+    <div id="tab-add-expense" style="display:none">
+        <div class="card">
+            <h3>Record Expenditure</h3>
+            <p style="font-size:12px; color:#666; margin-bottom:10px">Note: This will be deducted from the 40% Company Account share.</p>
+            <label>Expense Name</label>
+            <input type="text" id="e-name" placeholder="Office Rent, Utilities, etc.">
+            <label>Description</label>
+            <textarea id="e-desc" rows="2" placeholder="Brief details..."></textarea>
+            <label>Amount (PKR)</label>
+            <input type="number" id="e-amount" placeholder="0.00">
+            <label>Date</label>
+            <input type="date" id="e-date">
+            <button class="btn primary" onclick="addExpense()" style="margin-top:15px">Record Expense</button>
+        </div>
+    </div>
+
+    <div id="tab-transactions" style="display:none">
+        <div class="card" style="overflow-x:auto">
+            <table class="tx-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                        <th class="admin-only">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="tx-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="tab-settings" style="display:none">
+        <div class="card">
+            <h3>Manage Partners</h3>
+            <div id="partner-inputs"></div>
+            <button class="btn primary" onclick="savePartners()" style="margin-top:15px">Update Names</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Configuration
+    const ADMIN_PASSWORD = "admin123";
+    let isAdmin = false;
+    
+    let state = {
+        projects: [],
+        expenses: [],
+        partners: ['Partner 1', 'Partner 2', 'Partner 3', 'Partner 4']
+    };
+
+    // Initialize
+    function init() {
+        const saved = localStorage.getItem('nexaura_finance_data');
+        if (saved) state = JSON.parse(saved);
+        
+        // Set default dates to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('p-date').value = today;
+        document.getElementById('e-date').value = today;
+        
+        render();
+    }
+
+    function toggleAdmin() {
+        if (!isAdmin) {
+            const pw = prompt("Enter Admin Password:");
+            if (pw === ADMIN_PASSWORD) {
+                isAdmin = true;
+                document.body.classList.add('admin-mode');
+                document.getElementById('role-indicator').innerText = "Admin Mode";
+                document.getElementById('lock-icon').innerText = "🔓";
+            } else {
+                alert("Incorrect password.");
+            }
+        } else {
+            isAdmin = false;
+            document.body.classList.remove('admin-mode');
+            document.getElementById('role-indicator').innerText = "View-Only Mode";
+            document.getElementById('lock-icon').innerText = "🔒";
+            switchTab('dashboard');
+        }
+        render();
+    }
+
+    function switchTab(tabId) {
+        ['dashboard', 'add-project', 'add-expense', 'transactions', 'settings'].forEach(id => {
+            document.getElementById('tab-' + id).style.display = (id === tabId) ? 'block' : 'none';
+        });
+        document.querySelectorAll('.tab').forEach(t => {
+            t.classList.toggle('active', t.innerText.toLowerCase().includes(tabId.split('-')[0]));
+        });
+    }
+
+    function fmt(n) { return 'PKR ' + Math.round(n).toLocaleString(); }
+
+    function addProject() {
+        const name = document.getElementById('p-name').value;
+        const amount = parseFloat(document.getElementById('p-amount').value);
+        const refIdx = parseInt(document.getElementById('p-ref').value);
+        const date = document.getElementById('p-date').value;
+
+        if (!name || !amount) return alert("Fill all fields");
+
+        state.projects.push({ id: Date.now(), type: 'project', name, amount, refIdx, date });
+        saveAndRender();
+        alert("Project recorded!");
+    }
+
+    function addExpense() {
+        const name = document.getElementById('e-name').value;
+        const desc = document.getElementById('e-desc').value;
+        const amount = parseFloat(document.getElementById('e-amount').value);
+        const date = document.getElementById('e-date').value;
+
+        if (!name || !amount) return alert("Fill all fields");
+
+        state.expenses.push({ id: Date.now(), type: 'expense', name, desc, amount, date });
+        saveAndRender();
+        alert("Expense recorded!");
+    }
+
+    function deleteItem(id, type) {
+        if (!confirm("Delete this record?")) return;
+        if (type === 'project') state.projects = state.projects.filter(p => p.id !== id);
+        else state.expenses = state.expenses.filter(e => e.id !== id);
+        saveAndRender();
+    }
+
+    function saveAndRender() {
+        localStorage.setItem('nexaura_finance_data', JSON.stringify(state));
+        render();
+    }
+
+    function render() {
+        // 1. Calculate Totals
+        const totalRevenue = state.projects.reduce((s, p) => s + p.amount, 0);
+        const totalExpenses = state.expenses.reduce((s, e) => s + e.amount, 0);
+        
+        const rawCompanyShare = totalRevenue * 0.40;
+        const netCompanyAccount = rawCompanyShare - totalExpenses; // Deducting expenses from company 40%
+        
+        const charityFund = totalRevenue * 0.10;
+
+        // 2. Render Metrics
+        document.getElementById('metrics-container').innerHTML = `
+            <div class="metric"><div class="metric-label">Total Revenue</div><div class="metric-value color-revenue">${fmt(totalRevenue)}</div></div>
+            <div class="metric"><div class="metric-label">Company Account (Net)</div><div class="metric-value color-company">${fmt(netCompanyAccount)}</div></div>
+            <div class="metric"><div class="metric-label">Charity Fund</div><div class="metric-value color-charity">${fmt(charityFund)}</div></div>
+            <div class="metric"><div class="metric-label">Total Expenditures</div><div class="metric-value color-expense">${fmt(totalExpenses)}</div></div>
+        `;
+
+        // 3. Render Partner Earnings
+        const partnerData = state.partners.map((name, i) => {
+            const baseShare = (totalRevenue * 0.40) / 4;
+            const referralBonus = state.projects.filter(p => p.refIdx === i).reduce((s, p) => s + (p.amount * 0.10), 0);
+            return { name, total: baseShare + referralBonus };
+        });
+
+        document.getElementById('partner-list').innerHTML = partnerData.map(p => `
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f9f9f9">
+                <span>${p.name}</span>
+                <span style="font-weight:600">${fmt(p.total)}</span>
+            </div>
+        `).join('');
+
+        // 4. Render Ledger (Combined Projects & Expenses)
+        const allItems = [
+            ...state.projects.map(p => ({...p, displayType: 'Revenue'})),
+            ...state.expenses.map(e => ({...e, displayType: 'Expense', amount: -e.amount}))
+        ].sort((a,b) => new Date(b.date) - new Date(a.date));
+
+        document.getElementById('tx-body').innerHTML = allItems.map(item => `
+            <tr>
+                <td>${item.date}</td>
+                <td><span class="badge ${item.displayType === 'Expense' ? 'expense' : 'project'}">${item.displayType}</span></td>
+                <td><strong>${item.name}</strong><br><small style="color:#888">${item.desc || (item.refIdx >=0 ? 'Referral: '+state.partners[item.refIdx] : 'Direct')}</small></td>
+                <td style="font-weight:600; color:${item.amount < 0 ? '#993C1D' : '#0F6E56'}">${fmt(Math.abs(item.amount))}</td>
+                <td class="admin-btn">
+                    <button onclick="deleteItem(${item.id}, '${item.type}')" style="border:none; background:none; cursor:pointer; color:red">✕</button>
+                </td>
+            </tr>
+        `).join('');
+
+        // 5. Update Selectors & Settings
+        document.getElementById('p-ref').innerHTML = state.partners.map((n, i) => `<option value="${i}">${n}</option>`).join('') + `<option value="-1">None (External)</option>`;
+        document.getElementById('partner-inputs').innerHTML = state.partners.map((n, i) => `
+            <label>Partner ${i+1}</label>
+            <input type="text" class="p-input" value="${n}" data-idx="${i}">
+        `).join('');
+    }
+
+    function savePartners() {
+        const inputs = document.querySelectorAll('.p-input');
+        inputs.forEach(input => {
+            state.partners[input.dataset.idx] = input.value;
+        });
+        saveAndRender();
+        alert("Partners updated");
+    }
+
+    init();
+</script>
+
+</body>
+</html>
